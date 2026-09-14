@@ -1,0 +1,1577 @@
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AutoSimple - Fahrzeuge zum Verkauf</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    </head>
+    <body>
+        <!-- Offline Indicator -->
+        <div class="offline-indicator" id="offlineIndicator">
+            <i class="fas fa-wifi-slash"></i> You are offline. Some features may be unavailable.
+        </div>
+
+        <!-- PWA Install Banner -->
+        <div class="pwa-install-banner" id="pwaInstallBanner">
+            <div class="pwa-banner-content">
+                <div class="pwa-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; color: white;">Install AutoSimple</h3>
+                    <p style="margin: 5px 0 0 0; color: #cbd5f5; font-size: 14px;">Install app for better experience</p>
+                </div>
+            </div>
+            <div>
+                <button onclick="installPWA()" style="background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    Install
+                </button>
+                <button onclick="closePWAInstallBanner()" style="background: transparent; color: #cbd5f5; border: none; margin-left: 10px; cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <header>
+            <div class="logo-title" onclick="showPage('home')">
+                <img src="assets/logo2.jpg" class="header-bg">
+                <img src="assets/logo.png" class="logo">
+            </div>
+            <nav>
+                <a onclick="showPage('home')" id="navHome">Home</a>
+                <a onclick="showPage('info')" id="navInfo">Info</a>
+                <a onclick="openAddModal()" id="navAdd">Fahrzeug hinzufügen</a>
+                <a onclick="showPage('favorites')" id="favoritesLink">
+                    <i class="fas fa-heart"></i> <span id="navFavorites">Favorites</span>
+                    <span class="notification-badge" id="favoritesBadge" style="display: none;">0</span>
+                </a>
+                <a onclick="showPage('map')" id="mapLink">
+                    <i class="fas fa-map"></i> <span id="navMap">Map</span>
+                </a>
+                <a onclick="openMessagesModal()" id="messagesLink">
+                    <i class="fas fa-comments"></i> <span id="navMessages">Messages</span>
+                    <span class="notification-badge" id="messagesBadge" style="display: none;">0</span>
+                </a>
+                <select id="langSelect" onchange="setLang(this.value)">
+                    <option value="de" selected>DE</option>
+                    <option value="en">EN</option>
+                    <option value="fr">FR</option>
+                    <option value="it">IT</option>
+                    <option value="sq">SQ</option>
+                </select>
+
+                <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" type="button" aria-pressed="false">
+                    <i class="fas fa-moon"></i> <span>Dark</span>
+                </button>
+                
+                <button id="loginBtn" onclick="openAuthModal()"><span id="navLogin">Login / Sign Up</span></button>
+                
+                <div id="userInfoContainer" class="user-info hidden">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <span id="userName"></span>
+                    <button id="profileBtn" class="profile-btn" onclick="showPage('profile')">
+                        <i class="fas fa-user"></i> <span id="navProfile">Profile</span>
+                    </button>
+                    <button id="adminUsersBtn" class="admin-btn" onclick="showPage('admin')" style="display: none;">
+                        <i class="fas fa-cog"></i> <span id="navAdmin">Admin</span>
+                    </button>
+                    <button id="logoutBtn" class="logout" onclick="logout()"><span id="navLogout">Logout</span></button>
+                </div>
+            </nav>
+        </header>
+
+        <div class="container">
+            <div class="sorting-container" id="sortingContainer">
+                <div class="sort-wrapper">
+                    <i class="fas fa-sort-amount-down sort-icon"></i>
+                    <select id="sortFilter" onchange="filterCars()">
+                        <option value="" id="sortDefault">Sortieren</option>
+                        <option value="priceAsc" id="sortPriceAsc">Preis: niedrig → hoch</option>
+                        <option value="priceDesc" id="sortPriceDesc">Preis: hoch → niedrig</option>
+                        <option value="kmAsc" id="sortKmAsc">KM: niedrig → hoch</option>
+                        <option value="kmDesc" id="sortKmDesc">KM: hoch → niedrig</option>
+                        <option value="yearDesc" id="sortYearDesc">Neuste zuerst</option>
+                        <option value="yearAsc" id="sortYearAsc">Älteste zuerst</option>
+                    </select>
+                </div>
+            </div>
+
+            <section id="home" class="active">
+                <h2 id="tCars">Fahrzeuge zum Verkauf</h2>
+                
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-box" id="searchBox" placeholder="Suche nach Marke, Modell, Stadt, Farbe..." oninput="filterCars()">
+                </div>
+                
+                <div class="filter-box" id="filterBox">
+                    <select id="filterBrand" onchange="updateModels(); filterCars()">
+                        <option value="" id="filterBrandDefault">Alle Marken</option>
+                    </select>
+                    <select id="filterModel" onchange="filterCars()">
+                        <option value="" id="filterModelDefault">Alle Modelle</option>
+                    </select>
+                    <select id="filterYearFrom" onchange="filterCars()">
+                        <option value="" id="filterYearFromDefault">Baujahr von</option>
+                    </select>
+                    <select id="filterYearTo" onchange="filterCars()">
+                        <option value="" id="filterYearToDefault">bis</option>
+                    </select>
+                    <select id="filterKMFrom" onchange="filterCars()">
+                        <option value="" id="filterKMFromDefault">km von</option>
+                    </select>
+                    <select id="filterKMTo" onchange="filterCars()">
+                        <option value="" id="filterKMToDefault">bis</option>
+                    </select>
+                    
+                </div>
+                
+                <div class="clear-filters-container" id="clearFiltersContainer">
+                    <button class="clear-filters-icon" onclick="clearFilters()" title="Filter löschen">
+                        <i class="fas fa-times"></i>
+                        <span id="tClearFilters">Filter löschen</span>
+                    </button>
+                </div>
+
+                <div class="extra-filters-container" id="extraFiltersContainer">
+                    <button class="extra-filters-toggle" onclick="toggleExtraFilters()">
+                        <span id="toggleText">+ Weitere Filter anzeigen</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    
+                    <div class="extra-filters" id="extraFilters">
+                        <select id="filterPriceFrom" onchange="filterCars()">
+                            <option value="" id="filterPriceFromDefault">Preis von</option>
+                        </select>
+                        
+                        <select id="filterPriceTo" onchange="filterCars()">
+                            <option value="" id="filterPriceToDefault">bis</option>
+                        </select>
+                        
+                        <select id="filterFuel" onchange="filterCars()">
+                            <option value="" id="filterFuelDefault">Kraftstoff</option>
+                            <option value="Benzin" id="fuelPetrol">Benzin</option>
+                            <option value="Diesel" id="fuelDiesel">Diesel</option>
+                            <option value="Electric" id="fuelElectric">Electric</option>
+                            <option value="Hybrid" id="fuelHybrid">Hybrid</option>
+                        </select>
+                        
+                        <select id="filterTransmission" onchange="filterCars()">
+                            <option value="" id="filterTransmissionDefault">Getriebe</option>
+                            <option value="Automatik" id="transmissionAutomatic">Automatik</option>
+                            <option value="Manuell" id="transmissionManual">Manuell</option>
+                        </select>
+                        
+                        <select id="filterColor" onchange="filterCars()">
+                            <option value="" id="filterColorDefault">Außenfarbe</option>
+                            <option value="Schwarz" id="colorBlack">Schwarz</option>
+                            <option value="Weiß" id="colorWhite">Weiß</option>
+                            <option value="Grau" id="colorGray">Grau</option>
+                            <option value="Rot" id="colorRed">Rot</option>
+                            <option value="Blau" id="colorBlue">Blau</option>
+                            <option value="Silber" id="colorSilver">Silber</option>
+                            <option value="Grün" id="colorGreen">Grün</option>
+                            <option value="Beige" id="colorBeige">Beige</option>
+                        </select>
+                        
+                        <select id="filterInteriorColor" onchange="filterCars()">
+                            <option value="" id="filterInteriorColorDefault">Innenfarbe</option>
+                            <option value="Schwarz" id="interiorBlack">Schwarz</option>
+                            <option value="Grau" id="interiorGray">Grau</option>
+                            <option value="Beige" id="interiorBeige">Beige</option>
+                            <option value="Braun" id="interiorBrown">Braun</option>
+                            <option value="Rot" id="interiorRed">Rot</option>
+                            <option value="Blau" id="interiorBlue">Blau</option>
+                            <option value="Weiß" id="interiorWhite">Weiß</option>
+                            <option value="Creme" id="interiorCream">Creme</option>
+                        </select>
+                        
+                        <select id="filterEngineFrom" onchange="filterCars()">
+                            <option value="" id="filterEngineFromDefault">Hubraum von (cm³)</option>
+                            <option value="0" id="engine0">0</option>
+                            <option value="1000" id="engine1000">1.000</option>
+                            <option value="1500" id="engine1500">1.500</option>
+                            <option value="2000" id="engine2000">2.000</option>
+                            <option value="2500" id="engine2500">2.500</option>
+                            <option value="3000" id="engine3000">3.000</option>
+                            <option value="3500" id="engine3500">3.500</option>
+                            <option value="4000" id="engine4000">4.000</option>
+                            <option value="5000" id="engine5000">5.000</option>
+                        </select>
+                        
+                        <select id="filterEngineTo" onchange="filterCars()">
+                            <option value="" id="filterEngineToDefault">bis (cm³)</option>
+                            <option value="1000" id="engineTo1000">1.000</option>
+                            <option value="1500" id="engineTo1500">1.500</option>
+                            <option value="2000" id="engineTo2000">2.000</option>
+                            <option value="2500" id="engineTo2500">2.500</option>
+                            <option value="3000" id="engineTo3000">3.000</option>
+                            <option value="3500" id="engineTo3500">3.500</option>
+                            <option value="4000" id="engineTo4000">4.000</option>
+                            <option value="5000" id="engineTo5000">5.000</option>
+                            <option value="10000" id="engineTo10000">10.000</option>
+                        </select>
+                        
+                        <select id="filterSeatsFrom" onchange="filterCars()">
+                            <option value="" id="filterSeatsFromDefault">Sitzplätze von</option>
+                            <option value="1" id="seats1">1</option>
+                            <option value="2" id="seats2">2</option>
+                            <option value="3" id="seats3">3</option>
+                            <option value="4" id="seats4">4</option>
+                            <option value="5" id="seats5">5</option>
+                            <option value="6" id="seats6">6</option>
+                            <option value="7" id="seats7">7</option>
+                            <option value="8" id="seats8">8</option>
+                            <option value="9" id="seats9">9</option>
+                        </select>
+                        
+                        <select id="filterSeatsTo" onchange="filterCars()">
+                            <option value="" id="filterSeatsToDefault">bis</option>
+                            <option value="1" id="seatsTo1">1</option>
+                            <option value="2" id="seatsTo2">2</option>
+                            <option value="3" id="seatsTo3">3</option>
+                            <option value="4" id="seatsTo4">4</option>
+                            <option value="5" id="seatsTo5">5</option>
+                            <option value="6" id="seatsTo6">6</option>
+                            <option value="7" id="seatsTo7">7</option>
+                            <option value="8" id="seatsTo8">8</option>
+                            <option value="9" id="seatsTo9">9</option>
+                            <option value="12" id="seatsTo12">12+</option>
+                        </select>
+                        
+                        <select id="filterDoorsFrom" onchange="filterCars()">
+                            <option value="" id="filterDoorsFromDefault">Türen von</option>
+                            <option value="2" id="doors2">2/3 Türen</option>
+                            <option value="4" id="doors4">4/5 Türen</option>
+                        </select>
+                        
+                        <select id="filterDoorsTo" onchange="filterCars()">
+                            <option value="" id="filterDoorsToDefault">bis</option>
+                            <option value="2" id="doorsTo2">2/3 Türen</option>
+                            <option value="4" id="doorsTo4">4/5 Türen</option>
+                        </select>
+                        
+                        <select id="filterSellerType" onchange="filterCars()">
+                            <option value="">VerkäferTyp</option>
+                            <option value="private">Privat</option>
+                            <option value="handler">Händler</option>
+                        </select>
+
+                        <select id="filterVehicleType" onchange="filterCars()">
+                            <option value="" id="filterVehicleTypeDefault">Fahrzeugtyp</option>
+                            <option value="Limousine" id="typeSedan">Limousine</option>
+                            <option value="Coupe" id="typeCoupe">Coupe</option>
+                            <option value="SUV" id="typeSUV">SUV</option>
+                            <option value="Cabrio" id="typeConvertible">Cabrio</option>
+                            <option value="Kombi" id="typeEstate">Kombi</option>
+                            <option value="Pkw" id="typeCar">Pkw</option>
+                            <option value="Geländewagen" id="typeOffroad">Geländewagen</option>
+                        </select>
+                        
+                        <select id="filterMFK" onchange="filterCars()">
+                            <option value="" id="filterMFKDefault">MFK Status</option>
+                            <option value="neu" id="mfgNew">Neu (≤ 1 Jahr)</option>
+                            <option value="aktuell" id="mfgCurrent">Aktuell (≤ 2 Jahre)</option>
+                            <option value="bald_fällig" id="mfgSoon">Bald fällig (> 2 Jahre)</option>
+                            <option value="ohne" id="mfgWithout">Ohne MFK</option>
+                        </select>
+                        
+                        <div class="location-filter-container">
+                            <select id="filterCity" onchange="filterCars()">
+                                <option value="" id="filterCityDefault">Standort (Kanton)</option>
+                            </select>
+                            
+                            <select id="filterDistance" onchange="filterCars()">
+                                <option value="" id="filterDistanceDefault">Entfernung</option>
+                                <option value="10" id="distance10">≤ 10 km</option>
+                                <option value="25" id="distance25">≤ 25 km</option>
+                                <option value="50" id="distance50">≤ 50 km</option>
+                                <option value="100" id="distance100">≤ 100 km</option>
+                                <option value="200" id="distance200">≤ 200 km</option>
+                                <option value="500" id="distance500">≤ 500 km</option>
+                                <option value="1000" id="distance1000">≤ 1000 km</option>
+                                <option value="any" id="distanceAny">Beliebig</option>
+                            </select>
+                        </div>
+                        <div class="extras-container">
+            <button type="button" class="extras-toggle-btn" onclick="toggleExtrasModal()">
+                <i class="fas fa-plus-circle"></i> 
+                <span>Extras</span>
+                <span id="extrasCount" class="extras-count-badge">0</span>
+            </button>
+        </div>
+                    </div>
+                    
+                
+
+                    <button class="hide-filters-btn" id="hideFiltersBtn" onclick="toggleExtraFilters()">
+                        <span id="hideText">- Filter ausblenden</span>
+                        <span class="arrow">▲</span>
+                    </button>
+                </div>
+                
+                <div class="results-count" id="resultsCount"></div>
+
+                <div class="cars-grid" id="carsContainer">
+                </div>
+            </section>
+
+            <section id="info">
+                <h2 id="tInfo">Kontakt & Info</h2>
+                <p><b>Autosimple</b></p>
+                <p>📞 +076 42 66 501</p>
+                <p>✉️ max@autosimple.de</p>
+                <p>📍 Solothurn, Schweiz</p>
+            </section>
+
+            <section id="stats" style="display: none;">
+                <h2 id="tStats">Statistik</h2>
+                <div class="stats-container" id="statsContainer">
+                </div>
+            </section>
+
+            <section id="favorites">
+                <div class="favorites-container" id="favoritesContainer">
+                    <h2 id="tFavorites">Meine Favoriten</h2>
+                    <div id="favoritesContent">
+                    </div>
+                </div>
+            </section>
+
+            <section id="compare">
+                <div class="compare-container" id="compareContainer">
+                    <h2 id="tCompare">Vergleichen</h2>
+                    <div id="compareContent">
+                    </div>
+                </div>
+            </section>
+
+            <section id="map">
+        <div class="map-container">
+            <h2 id="tMap">Fahrzeuge auf der Karte</h2>
+            <div id="map"></div>
+            <div class="map-controls">
+                <div class="map-filter">
+                    <select id="mapBrandFilter" onchange="updateMapFromHomeFilters()">
+                        <option value="">Alle Marken</option>
+                    </select>
+                </div>
+                <div class="map-filter">
+                    <select id="mapDistanceFilter" onchange="updateMapFromHomeFilters()">
+                        <option value="10">≤ 10 km</option>
+                        <option value="25">≤ 25 km</option>
+                        <option value="50">≤ 50 km</option>
+                        <option value="100" selected>≤ 100 km</option>
+                        <option value="200">≤ 200 km</option>
+                        <option value="500">≤ 500 km</option>
+                        <option value="1000">≤ 1000 km</option>
+                    </select>
+                </div>
+                <div class="map-filter">
+                    <button onclick="useHomeFilters()" style="width: 100%; background: var(--primary); padding: 10px;">
+                        <i class="fas fa-filter"></i> Aktuelle Home-Filter verwenden
+                    </button>
+                </div>
+                <div class="map-cars-list" id="mapCarsList">
+                    <!-- Cars will be listed here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+            <section id="profile">
+                <div class="profile-container" id="profileContainer">
+                </div>
+            </section>
+
+            <section id="admin">
+                <div class="admin-dashboard" id="adminDashboard">
+                    <h2 id="tAdmin">Admin Dashboard</h2>
+                    <div class="admin-stats" id="adminStats">
+                    </div>
+                    <div class="admin-actions">
+                        <div class="admin-action-btn" onclick="viewRegisteredUsers()">
+                            <i class="fas fa-users"></i>
+                            <h3>Benutzer verwalten</h3>
+                        </div>
+                        <div class="admin-action-btn" onclick="viewPendingCars()">
+                            <i class="fas fa-clock"></i>
+                            <h3>Shpallje në Pritje</h3>
+                            <span id="pendingCarsCount" class="notification-badge" style="position: absolute; top: 10px; right: 10px;">0</span>
+                        </div>
+                        <div class="admin-action-btn" onclick="debugCarStatus()" style="background: var(--warning);">
+                            <i class="fas fa-bug"></i>
+                            <h3>Debug Status</h3>
+                        </div>
+                        <div class="admin-action-btn" onclick="showAuditLog()">
+                            <i class="fas fa-history"></i>
+                            <h3>Audit Log</h3>
+                        </div>
+                        <div class="admin-action-btn" onclick="exportData()">
+                            <i class="fas fa-download"></i>
+                            <h3>Daten exportieren</h3>
+                        </div>
+                        <div class="admin-action-btn" onclick="importData()">
+                            <i class="fas fa-upload"></i>
+                            <h3>Daten importieren</h3>
+                        </div>
+                    </div>
+                    <div class="audit-log-container" id="auditLogContainer" style="display: none;">
+                        <h3>Audit Log</h3>
+                        <table class="audit-log-table" id="auditLogTable">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Benutzer</th>
+                                    <th>Aktion</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <div class="pending-cars-container" id="pendingCarsContainer" style="display: none; margin-top: 30px;">
+                <h3>Shpallje në Pritje të Aprovimit</h3>
+                <div id="pendingCarsList"></div>
+            </div>
+            <section id="notifications">
+                <div class="notifications-container" id="notificationsContainer">
+                    <h2 id="tNotifications">Benachrichtigungen</h2>
+                    <div id="notificationsList">
+                    </div>
+                </div>
+            </section>
+
+            <footer>
+                <div class="footer-content">
+                    <p>AutoSimple - Alle Inhalte auf dieser Website sind kostenlos und privat. Diese Plattform dient ausschließlich der privaten Vermittlung von Fahrzeugen zwischen Privatpersonen.</p>
+                    <p>Wir erheben keine Gebühren und übernehmen keine Haftung für die angeboteten Fahrzeuge. Alle Transaktionen erfolgen direkt zwischen Verkäufer und Käufer.</p>
+                    <p>© 2024 AutoSimple - Private Fahrzeugvermittlung</p>
+                </div>
+            </footer>
+
+            <!-- Modals - AUTENTIFIKIMI I KORIGJUAR -->
+            <div class="modal" id="authModal">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeAuthModal()">×</button>
+                    <h2 id="tAuth">Anmeldung / Registrierung</h2>
+                    
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" onclick="switchAuthTab('login')" id="tLoginTab">Login</button>
+                        <button class="auth-tab" onclick="switchAuthTab('signup')" id="tSignupTab">Sign Up</button>
+                    </div>
+                    
+                    <!-- FORMA E LOGIN -->
+                    <div id="loginForm" class="auth-form active">
+                        <div class="form-group">
+                            <label for="loginIdentifier">Benutzername oder E-Mail:</label>
+                            <input type="text" id="loginIdentifier" placeholder="Benutzername oder E-Mail">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="loginPassword">Passwort:</label>
+                            <input type="password" id="loginPassword" placeholder="Passwort">
+                        </div>
+                        
+                        <button onclick="loginUser()" id="loginSubmitBtn">
+                            <span id="loginLoading" class="loading hidden"></span>
+                            <span id="tLoginBtn">Einloggen</span>
+                        </button>
+                    </div> <!-- MBYLLET LOGIN FORM -->
+
+                    
+
+                    <!-- Butoni i Google për Login -->
+                    <div class="google-btn-wrapper">
+                        <div id="g_id_onload"
+                            data-client_id="370204xxxxxsgnnr.apps.googleusercontent.com" 
+                            data-context="signin"
+                            data-ux_mode="popup"
+                            data-callback="handleGoogleCredentialResponse"
+                            data-auto_prompt="false">
+                        </div>
+                        <div class="g_id_signin"
+                            data-type="standard"
+                            data-shape="rectangular"
+                            data-theme="outline"
+                            data-text="signin_with"
+                            data-size="large"
+                            data-logo_alignment="left">
+                        </div>
+                    </div>
+                    
+                    <!-- FORMA E REGJISTRIMIT -->
+                    <div id="signupForm" class="auth-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signupFirstName">Vorname:</label>
+                                <input type="text" id="signupFirstName" placeholder="Ihr Vorname">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="signupLastName">Nachname:</label>
+                                <input type="text" id="signupLastName" placeholder="Ihr Nachname">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signupUsername">Benutzername:</label>
+                            <input type="text" id="signupUsername" placeholder="Wählen Sie einen Benutzernamen">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signupEmail">E-Mail:</label>
+                            <input type="email" id="signupEmail" placeholder="Ihre E-Mail-Adresse">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signupPhone">Telefon:</label>
+                                <input type="tel" id="signupPhone" placeholder="+41 76 123 45 67">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="signupAddress">Adresse:</label>
+                                <input type="text" id="signupAddress" placeholder="Ihre Adresse">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signupPassword">Passwort:</label>
+                            <input type="password" id="signupPassword" placeholder="Mindestens 6 Zeichen">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signupConfirmPassword">Passwort bestätigen:</label>
+                            <input type="password" id="signupConfirmPassword" placeholder="Passwort wiederholen">
+                        </div>
+                        
+                        <button onclick="signupUser()" id="signupSubmitBtn">
+                            <span id="signupLoading" class="loading hidden"></span>
+                            <span id="tSignupBtn">Registrieren</span>
+                        </button>
+                    </div> <!-- MBYLLET SIGNUP FORM -->
+
+                    
+
+                    <!-- Butoni i Google për Regjistrim -->
+                    <div class="google-btn-wrapper">
+                        <div id="g_id_onload_signup"
+                            data-client_id="370204xxxxxsgnnr.apps.googleusercontent.com" 
+                            data-context="signup"
+                            data-ux_mode="popup"
+                            data-callback="handleGoogleCredentialResponse"
+                            data-auto_prompt="false">
+                        </div>
+                        <div class="g_id_signup"
+                            data-type="standard"
+                            data-shape="rectangular"
+                            data-theme="outline"
+                            data-text="signup_with"
+                            data-size="large"
+                            data-logo_alignment="left">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal" id="addModal">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeAddModal()">×</button>
+                    <h2 id="tAdd">Fahrzeug hinzufügen</h2>
+                    
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sellerType">Shitësi:</label>
+                    <select id="sellerType">
+                        <option value="">Verkäufer Typ</option>
+                        <option value="private">Privat (Individ)</option>
+                        <option value="handler">Händler (Profesionist)</option>
+                    </select>
+                </div>
+            </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Marke:</label>
+                            <select id="name" onchange="updateAddModelOptions()">
+                                <option value="" id="addBrandDefault">Marke wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="model">Modell:</label>
+                            <select id="model">
+                                <option value="" id="addModelDefault">Modell wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="vehicleType">Fahrzeugtyp:</label>
+                            <select id="vehicleType">
+                                <option value="" id="addVehicleTypeDefault">Fahrzeugtyp wählen</option>
+                                <option value="Limousine" id="addTypeSedan">Limousine</option>
+                                <option value="Coupe" id="addTypeCoupe">Coupe</option>
+                                <option value="SUV" id="addTypeSUV">SUV</option>
+                                <option value="Cabrio" id="addTypeConvertible">Cabrio</option>
+                                <option value="Kombi" id="addTypeEstate">Kombi</option>
+                                <option value="Pkw" id="addTypeCar">Pkw</option>
+                                <option value="Geländewagen" id="addTypeOffroad">Geländewagen</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="year">Baujahr:</label>
+                            <select id="year">
+                                <option value="" id="addYearDefault">Baujahr wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="km">Kilometer:</label>
+                            <input type="number" id="km" placeholder="Kilometer" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="engine">Hubraum (cm³):</label>
+                            <select id="engine">
+                                <option value="" id="addEngineDefault">Hubraum wählen</option>
+                                <option value="1000" id="addEngine1000">1.000</option>
+                                <option value="1200" id="addEngine1200">1.200</option>
+                                <option value="1400" id="addEngine1400">1.400</option>
+                                <option value="1600" id="addEngine1600">1.600</option>
+                                <option value="1800" id="addEngine1800">1.800</option>
+                                <option value="2000" id="addEngine2000">2.000</option>
+                                <option value="2200" id="addEngine2200">2.200</option>
+                                <option value="2500" id="addEngine2500">2.500</option>
+                                <option value="3000" id="addEngine3000">3.000</option>
+                                <option value="3500" id="addEngine3500">3.500</option>
+                                <option value="4000" id="addEngine4000">4.000</option>
+                                <option value="4500" id="addEngine4500">4.500</option>
+                                <option value="5000" id="addEngine5000">5.000</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="color">Außenfarbe:</label>
+                            <select id="color">
+                                <option value="" id="addColorDefault">Außenfarbe wählen</option>
+                                <option value="Schwarz" id="addColorBlack">Schwarz</option>
+                                <option value="Weiß" id="addColorWhite">Weiß</option>
+                                <option value="Grau" id="addColorGray">Grau</option>
+                                <option value="Rot" id="addColorRed">Rot</option>
+                                <option value="Blau" id="addColorBlue">Blau</option>
+                                <option value="Silber" id="addColorSilver">Silber</option>
+                                <option value="Grün" id="addColorGreen">Grün</option>
+                                <option value="Beige" id="addColorBeige">Beige</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="interiorColor">Innenfarbe:</label>
+                            <select id="interiorColor">
+                                <option value="" id="addInteriorColorDefault">Innenfarbe wählen</option>
+                                <option value="Schwarz" id="addInteriorBlack">Schwarz</option>
+                                <option value="Grau" id="addInteriorGray">Grau</option>
+                                <option value="Beige" id="addInteriorBeige">Beige</option>
+                                <option value="Braun" id="addInteriorBrown">Braun</option>
+                                <option value="Rot" id="addInteriorRed">Rot</option>
+                                <option value="Blau" id="addInteriorBlue">Blau</option>
+                                <option value="Weiß" id="addInteriorWhite">Weiß</option>
+                                <option value="Creme" id="addInteriorCream">Creme</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="seats">Sitzplätze:</label>
+                            <select id="seats">
+                                <option value="" id="addSeatsDefault">Sitzplätze wählen</option>
+                                <option value="1" id="addSeats1">1</option>
+                                <option value="2" id="addSeats2">2</option>
+                                <option value="3" id="addSeats3">3</option>
+                                <option value="4" id="addSeats4">4</option>
+                                <option value="5" id="addSeats5">5</option>
+                                <option value="6" id="addSeats6">6</option>
+                                <option value="7" id="addSeats7">7</option>
+                                <option value="8" id="addSeats8">8</option>
+                                <option value="9" id="addSeats9">9</option>
+                                <option value="12" id="addSeats12">12+</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="doors">Türen:</label>
+                            <select id="doors">
+                                <option value="" id="addDoorsDefault">Türen wählen</option>
+                                <option value="2" id="addDoors2">2/3 Türen</option>
+                                <option value="4" id="addDoors4">4/5 Türen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="fuel">Kraftstoff:</label>
+                            <select id="fuel">
+                                <option value="" id="addFuelDefault">Kraftstoff wählen</option>
+                                <option value="Benzin" id="addFuelPetrol">Benzin</option>
+                                <option value="Diesel" id="addFuelDiesel">Diesel</option>
+                                <option value="Electric" id="addFuelElectric">Electric</option>
+                                <option value="Hybrid" id="addFuelHybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="transmission">Getriebe:</label>
+                            <select id="transmission">
+                                <option value="" id="addTransmissionDefault">Getriebe wählen</option>
+                                <option value="Automatik" id="addTransmissionAutomatic">Automatik</option>
+                                <option value="Manuell" id="addTransmissionManual">Manuell</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price">Preis (CHF):</label>
+                            <input type="number" id="price" placeholder="Preis CHF" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="city">Standort (Kanton):</label>
+                            <select id="city">
+                                <option value="" id="addCityDefault">Kanton wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inspectionDate">Letzte MFK:</label>
+                            <input type="date" id="inspectionDate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Telefon (optional):</label>
+                            <input type="tel" id="phone" placeholder="+41 76 123 45 67">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email (optional):</label>
+                            <input type="email" id="email" placeholder="email@example.com">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Beschreibung:</label>
+                        <textarea id="description" placeholder="Beschreiben Sie Ihr Fahrzeug..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Bilder (optional, max. 5):</label>
+                        <div class="file-input-container">
+                            <label class="file-input-label" for="imageFiles">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span id="fileUploadText">Bilder auswählen oder hier ablegen</span>
+                                <small id="fileUploadInfo">Optional: maximal 5 Bilder, JPG/PNG bis 5MB</small>
+                            </label>
+                            <input type="file" id="imageFiles" accept="image/*" multiple>
+                        </div>
+                        <div class="file-preview" id="filePreview"></div>
+                    </div>
+
+                                    <!-- EXTRAS BUTONI PER SHTO MAKINE -->
+                    <div class="form-group">
+                        <label>Extras / Ausstattung:</label>
+                        <div class="extras-add-container">
+                            <button type="button" class="extras-toggle-btn" onclick="openExtrasForAdd()" style="width: 100%; justify-content: center;">
+                                <i class="fas fa-plus-circle"></i> 
+                                <span>Extras auswählen</span>
+                                <span id="addExtrasCount" class="extras-count-badge" style="display: none;">0</span>
+                            </button>
+                            <div id="selectedExtrasPreview" class="selected-extras-preview" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="addCar()" id="addBtn">
+                        <span id="addLoading" class="loading hidden"></span>
+                        <span id="tAddBtn">Hinzufügen</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal" id="editModal">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeEditModal()">×</button>
+                    <h2 id="tEdit">Fahrzeug bearbeiten</h2>
+                    <input type="hidden" id="editIndex">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editName">Marke:</label>
+                            <select id="editName" onchange="updateEditModelOptions()">
+                                <option value="">Marke wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editModel">Modell:</label>
+                            <select id="editModel">
+                                <option value="">Modell wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editSellerType">Shitësi:</label>
+                                <select id="editSellerType">
+                                    <option value="">VerkäferTyp</option>
+                                    <option value="private">Privat (Individ)</option>
+                                    <option value="handler">Händler (Profesionist)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editVehicleType">Fahrzeugtyp:</label>
+                            <select id="editVehicleType">
+                                <option value="">Fahrzeugtyp wählen</option>
+                                <option value="Limousine">Limousine</option>
+                                <option value="Coupe">Coupe</option>
+                                <option value="SUV">SUV</option>
+                                <option value="Cabrio">Cabrio</option>
+                                <option value="Kombi">Kombi</option>
+                                <option value="Pkw">Pkw</option>
+                                <option value="Geländewagen">Geländewagen</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editYear">Baujahr:</label>
+                            <select id="editYear">
+                                <option value="">Baujahr wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editKm">Kilometer:</label>
+                            <input type="number" id="editKm" placeholder="Kilometer" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editEngine">Hubraum (cm³):</label>
+                            <select id="editEngine">
+                                <option value="">Hubraum wählen</option>
+                                <option value="1000">1.000</option>
+                                <option value="1200">1.200</option>
+                                <option value="1400">1.400</option>
+                                <option value="1600">1.600</option>
+                                <option value="1800">1.800</option>
+                                <option value="2000">2.000</option>
+                                <option value="2200">2.200</option>
+                                <option value="2500">2.500</option>
+                                <option value="3000">3.000</option>
+                                <option value="3500">3.500</option>
+                                <option value="4000">4.000</option>
+                                <option value="4500">4.500</option>
+                                <option value="5000">5.000</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editColor">Außenfarbe:</label>
+                            <select id="editColor">
+                                <option value="">Außenfarbe wählen</option>
+                                <option value="Schwarz">Schwarz</option>
+                                <option value="Weiß">Weiß</option>
+                                <option value="Grau">Grau</option>
+                                <option value="Rot">Rot</option>
+                                <option value="Blau">Blau</option>
+                                <option value="Silber">Silber</option>
+                                <option value="Grün">Grün</option>
+                                <option value="Beige">Beige</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editInteriorColor">Innenfarbe:</label>
+                            <select id="editInteriorColor">
+                                <option value="">Innenfarbe wählen</option>
+                                <option value="Schwarz">Schwarz</option>
+                                <option value="Grau">Grau</option>
+                                <option value="Beige">Beige</option>
+                                <option value="Braun">Braun</option>
+                                <option value="Rot">Rot</option>
+                                <option value="Blau">Blau</option>
+                                <option value="Weiß">Weiß</option>
+                                <option value="Creme">Creme</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editSeats">Sitzplätze:</label>
+                            <select id="editSeats">
+                                <option value="">Sitzplätze wählen</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="12">12+</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editDoors">Türen:</label>
+                            <select id="editDoors">
+                                <option value="">Türen wählen</option>
+                                <option value="2">2/3 Türen</option>
+                                <option value="4">4/5 Türen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editFuel">Kraftstoff:</label>
+                            <select id="editFuel">
+                                <option value="">Kraftstoff wählen</option>
+                                <option value="Benzin">Benzin</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="Electric">Electric</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editTransmission">Getriebe:</label>
+                            <select id="editTransmission">
+                                <option value="">Getriebe wählen</option>
+                                <option value="Automatik">Automatik</option>
+                                <option value="Manuell">Manuell</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPrice">Preis (CHF):</label>
+                            <input type="number" id="editPrice" placeholder="Preis CHF" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editCity">Standort (Kanton):</label>
+                            <select id="editCity">
+                                <option value="">Kanton wählen</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editInspectionDate">Letzte MFK:</label>
+                            <input type="date" id="editInspectionDate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPhone">Telefon (optional):</label>
+                            <input type="tel" id="editPhone" placeholder="+41 76 123 45 67">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editEmail">Email (optional):</label>
+                            <input type="email" id="editEmail" placeholder="email@example.com">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editDescription">Beschreibung:</label>
+                        <textarea id="editDescription" placeholder="Beschreiben Sie Ihr Fahrzeug..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Aktuelle Bilder:</label>
+                        <div id="currentImagesContainer" class="file-preview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Neue Bilder hinzufügen (optional):</label>
+                        <div class="file-input-container">
+                            <label class="file-input-label" for="editImageFiles">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Bilder auswählen oder hier ablegen</span>
+                                <small>Optional: maximal 5 Bilder, JPG/PNG bis 5MB</small>
+                            </label>
+                            <input type="file" id="editImageFiles" accept="image/*" multiple>
+                        </div>
+                        <div class="file-preview" id="editFilePreview"></div>
+                    </div>
+                    
+                                    <!-- EXTRAS BUTONI PER EDITO MAKINE -->
+                    <div class="form-group">
+                        <label>Extras / Ausstattung:</label>
+                        <div class="extras-edit-container">
+                            <button type="button" class="extras-toggle-btn" onclick="openExtrasForEdit()" style="width: 100%; justify-content: center;">
+                                <i class="fas fa-plus-circle"></i> 
+                                <span>Extras bearbeiten</span>
+                                <span id="editExtrasCount" class="extras-count-badge" style="display: none;">0</span>
+                            </button>
+                            <div id="editSelectedExtrasPreview" class="selected-extras-preview" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="saveEdit()" id="saveBtn">
+                        <span id="saveLoading" class="loading hidden"></span>
+                        <span id="tSaveBtn">Änderungen speichern</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Car Detail Modal -->
+            <div class="modal" id="carDetailModal">
+                <div class="modal-content car-detail-modal">
+                    <button class="close-btn" onclick="closeCarDetailModal()">×</button>
+                    <div id="carDetailContent"></div>
+                </div>
+            </div>
+
+            <!-- Messages Modal -->
+            <div class="modal" id="messagesModal">
+                <div class="modal-content messages-modal">
+                    <button class="close-btn" onclick="closeMessagesModal()">×</button>
+                    <h2>Nachrichten</h2>
+                    <div class="messages-container">
+                        <div class="conversations-list" id="conversationsList">
+                            <!-- Conversations will be loaded here -->
+                        </div>
+                        <div class="chat-container" id="chatContainer">
+                            <div class="no-conversation">
+                                <p>Wählen Sie eine Konversation aus, um Nachrichten zu sehen</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Seller Modal -->
+            <div class="modal" id="contactModal">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeContactModal()">×</button>
+                    <h2>Nachricht senden</h2>
+                    <div id="contactCarInfo"></div>
+                    <div class="form-group">
+                        <label for="contactMessage">Ihre Nachricht:</label>
+                        <textarea id="contactMessage" placeholder="Schreiben Sie Ihre Nachricht an den Verkäufer..." rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactName">Ihr Name:</label>
+                        <input type="text" id="contactName" placeholder="Ihr Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Ihre E-Mail:</label>
+                        <input type="email" id="contactEmail" placeholder="Ihre E-Mail">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactPhone">Ihr Telefon (optional):</label>
+                        <input type="tel" id="contactPhone" placeholder="Ihr Telefon">
+                    </div>
+                    <button onclick="sendMessageToSeller()" id="sendMessageBtn">
+                        <span id="sendMessageLoading" class="loading hidden"></span>
+                        <span>Nachricht senden</span>
+                    </button>
+                </div>
+            </div>
+
+
+                    <!-- Extras Modal -->
+            <div class="modal" id="extrasModal">
+                <div class="modal-content modal-wide">
+                    <button class="close-btn" onclick="closeExtrasModal()">×</button>
+                    <h2 id="extrasModalTitle"><i class="fas fa-car"></i> Zusatzausstattung / Extras</h2>
+                    <p id="extrasModalDescription" style="margin-bottom: 20px; color: #94a3b8;">Wählen Sie alle Extras, die das Fahrzeug hat:</p>
+                    
+                    <div id="extrasForFilter" style="display: block;">
+                        <!-- Për filter në faqen Home -->
+                        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                            <button onclick="clearAllExtrasFilter()" class="clear-filters-icon" style="padding: 6px 12px; font-size: 13px;">
+                                <i class="fas fa-times"></i> <span id="extrasClearAll">Alle löschen</span>
+                            </button>
+                            <button onclick="selectAllExtras()" class="edit-btn" style="padding: 6px 12px; font-size: 13px;">
+                                <i class="fas fa-check-double"></i> <span id="extrasSelectAll">Alle hinzufügen</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="extrasForAdd" style="display: none;">
+                        <!-- Për shtimin e makinës -->
+                    </div>
+                    
+                    <div id="extrasForEdit" style="display: none;">
+                        <!-- Për editimin e makinës -->
+                    </div>
+                    
+                    <!-- Të gjitha kategoritë e Extras -->
+                    <div id="extrasCategoriesContainer">
+                        <!-- Kategoria A: Siguria & Teknologjia -->
+                        <div class="extras-category">
+                            <h3 id="extrasCategorySafety"><i class="fas fa-shield-alt"></i> A. Sicherheit & Technologie</h3>
+                            <div class="extras-grid">
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraABS" value="ABS" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 ABS</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraESP" value="ESP" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 ESP</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraASR" value="ASR" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 ASR (Traction Control)</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAirbagDriver" value="Airbag Fahrer" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Airbag shofer</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAirbagPassenger" value="Airbag Beifahrer" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Airbag pasagjer</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAirbagSide" value="Seitenairbags" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Airbag anësorë</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAirbagCurtain" value="Kopfairbags" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Airbag koka</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraTPMS" value="Reifendruckkontrolle" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Kontroll presioni gomash</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraEmergencyBrake" value="Notbremsassistent" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Sistem frenash emergjence</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraLaneAssist" value="Spurhalteassistent" data-category="safety">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Sistem paralajmërimi për humbjen e vijës</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kategoria B: Komoditeti -->
+                        <div class="extras-category">
+                            <h3 id="extrasCategoryComfort"><i class="fas fa-couch"></i> B. Komfort</h3>
+                            <div class="extras-grid">
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSeatHeatFront" value="Sitzheizung vorne" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪑 Sitzheizung - përpara</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSeatHeatRear" value="Sitzheizung hinten" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪑 Sitzheizung - prapa</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSeatVentilation" value="Sitzbelüftung" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪑 Sitzbelüftung</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSeatMassage" value="Sitzmassage" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪑 Sitzmassage</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraClimateAuto" value="Klimaautomatik" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">❄️ Klimaautomatik</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraClimateZones" value="Mehrzonen-Klima" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">❄️ 2/3/4-Zonen-Klima</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraWheelHeat" value="Lenkradheizung" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🌡️ Lenkradheizung</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraWindowHeat" value="Scheibenheizung" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪟 Scheibenheizung</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraMemorySeats" value="Memory-Sitze" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💺 Memory-Sitze</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraPowerWindows" value="Elektrische Fensterheber" data-category="comfort">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪟 Elektrische Fensterheber</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kategoria C: Teknologjia & Parkimi -->
+                        <div class="extras-category">
+                            <h3 id="extrasCategoryTech"><i class="fas fa-camera"></i> C. Technologie & Parken</h3>
+                            <div class="extras-grid">
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraRearCam" value="Rückfahrkamera" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📷 Rückfahrkamera</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extra360Cam" value="360-Grad-Kamera" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📷 360-Grad-Kamera</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraParkAssistRear" value="Einparkhilfe hinten" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📍 Einparkhilfe - prapa</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraParkAssistFront" value="Einparkhilfe vorne" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📍 Einparkhilfe - përpara</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraParkSensorsRear" value="Parkpiepser hinten" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📍 Parkpiepser - prapa</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraParkSensorsFront" value="Parkpiepser vorne" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📍 Parkpiepser - përpara</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAutoPark" value="Automatisches Einparken" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📍 Totale Einparkhilfe</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAdaptiveCruise" value="Abstandstempomat" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🔧 Abstandstempomat</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraLaneKeep" value="Spurhalteassistent" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🔧 Spurhalteassistent</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraBlindSpot" value="Toter Winkel-Assistent" data-category="tech">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🔧 Toter Winkel-Assistent</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kategoria D: Dritat -->
+                        <div class="extras-category">
+                            <h3 id="extrasCategoryLights"><i class="fas fa-lightbulb"></i> D. Beleuchtung</h3>
+                            <div class="extras-grid">
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraLED" value="LED-Scheinwerfer" data-category="lights">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💡 LED-Scheinwerfer</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraXenon" value="Xenon-Scheinwerfer" data-category="lights">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💡 Xenon-Scheinwerfer</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraMatrixLED" value="Matrix-LED" data-category="lights">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💡 Matrix-LED</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraCornerLight" value="Kurvenlicht" data-category="lights">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💡 Kurvenlicht</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraHighBeamAssist" value="Fernlichtassistent" data-category="lights">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💡 Fernlichtassistent</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraDaylight" value="Tagfahrlicht" data-category="lights">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">💡 Tagfahrlicht</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kategoria E: Opsione të Tjera -->
+                        <div class="extras-category">
+                            <h3 id="extrasCategoryOther"><i class="fas fa-cogs"></i> E. Weitere Optionen</h3>
+                            <div class="extras-grid">
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraStartStop" value="Start-Stopp-Automatik" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🔋 Start-Stopp-Automatik</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraKeyless" value="Schlüsselloses Starten" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🔋 Schlüsselloses Starten</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extra4x4" value="Allradantrieb" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🛞 Allradantrieb (4x4)</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraWinterTires" value="Winterreifen" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🛞 Winterreifen</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAllSeasonTires" value="Ganzjahresreifen" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🛞 Ganzjahresreifen</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSoundSystem" value="Premium Soundsystem" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🎵 Soundsystem Premium</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraCarPlay" value="Apple CarPlay" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📱 Apple CarPlay</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraAndroidAuto" value="Android Auto" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📱 Android Auto</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraNavigation" value="Navigationssystem" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📡 Navigationssystem</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraHUD" value="Head-up-Display" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">📡 Head-up-Display</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraPanoramaRoof" value="Panoramadach" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🪟 Panoramadach</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraTowbar" value="Anhängerkupplung" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚚 Anhängerkupplung</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSunroof" value="Schiebedach" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Schiebedach</span>
+                                    </label>
+                                </div>
+                                <div class="extra-option">
+                                    <label class="extra-checkbox">
+                                        <input type="checkbox" id="extraSportSeats" value="Sportsitze" data-category="other">
+                                        <span class="checkmark"></span>
+                                        <span class="extra-label">🚗 Sportsitze</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-top: 25px;">
+                        <button onclick="saveExtrasSelection()" class="edit-btn" style="margin-right: 10px;">
+                            <i class="fas fa-save"></i> <span id="extrasSave">Speichern</span>
+                        </button>
+                        <button onclick="closeExtrasModal()" class="delete-btn">
+                            <i class="fas fa-times"></i> <span id="extrasClose">Schließen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Share Modal -->
+            <div class="modal" id="shareModal">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeShareModal()">×</button>
+                    <h2>Teilen</h2>
+                    <p>Teilen Sie dieses Fahrzeug auf sozialen Medien</p>
+                    <div class="share-buttons">
+                        <button class="share-btn share-facebook" onclick="shareOnFacebook()">
+                            <i class="fab fa-facebook-f"></i> Facebook
+                        </button>
+                        <button class="share-btn share-twitter" onclick="shareOnTwitter()">
+                            <i class="fab fa-twitter"></i> Twitter
+                        </button>
+                        <button class="share-btn share-whatsapp" onclick="shareOnWhatsApp()">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </button>
+                        <button class="share-btn share-copy" onclick="copyShareLink()">
+                            <i class="fas fa-copy"></i> Link kopieren
+                        </button>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <p>Direkter Link:</p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="shareLink" style="flex: 1; padding: 10px; border-radius: 6px; border: none; background: #1e293b; color: white;" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compare Modal -->
+            <div class="modal" id="compareModal">
+                <div class="modal-content modal-wide">
+                    <button class="close-btn" onclick="closeCompareModal()">×</button>
+                    <h2>Fahrzeuge vergleichen</h2>
+                    <div id="compareModalContent">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast"></div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="script.js"></script>
+        <!-- Ngarkimi i Google Identity Services -->
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+    </body>
+    </html>
