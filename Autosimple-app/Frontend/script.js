@@ -2790,149 +2790,323 @@ function openCarDetailModal(index) {
     }, 100);
 });
     detailContent.innerHTML = `
-        <div class="car-detail-container">
-            <div class="car-detail-images">
-                <img id="mainDetailImage" src="${car.images && car.images.length > 0 ? car.images[0] : 'https://via.placeholder.com/800x400?text=No+Image'}" 
-                     alt="${car.n} ${car.m}" class="main-image">
-                <div class="thumbnail-container" id="detailThumbnails">
-                    ${car.images && car.images.length > 0 ? car.images.map((img, idx) => `
-                        <img src="${img}" class="thumbnail ${idx === 0 ? 'active' : ''}" 
-                             onclick="changeDetailImage(${idx})" alt="Thumbnail ${idx + 1}">
-                    `).join('') : ''}
-                </div>
+    <div class="car-detail-container">
 
-                ${car.description ? `
-                <div class="description-box">
-                    <h3>Beschreibung</h3>
-                    <p>${car.description}</p>
-                </div>
-                ` : ''}
+        <!-- FOTO -->
+        <div class="car-detail-images">
 
-                <div class="contact-info">
-                    <h3>Kontaktinformationen</h3>
-                    <div class="contact-item">
-                        <i class="fas fa-user"></i>
-                        <span>${car.ownerName}</span>
-                    </div>
-                    ${car.phone ? `
-                    <div class="contact-item">
-                        <i class="fas fa-phone"></i>
-                        <span>${car.phone}</span>
-                    </div>
-                    ` : ''}
-                    ${car.email ? `
-                    <div class="contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <span>${car.email}</span>
-                    </div>
-                    ` : ''}
-                </div>
+            <img id="mainDetailImage"
+                 src="${car.images && car.images.length > 0
+                    ? car.images[0]
+                    : 'https://via.placeholder.com/800x400?text=No+Image'}"
+                 alt="${car.n} ${car.m}"
+                 class="main-image">
 
-                ${car.extras && car.extras.length > 0 ? `
-                <div class="extras-category" style="margin-top: 15px;">
-                    <h3><i class="fas fa-check-circle"></i> Extras / Ausstattung</h3>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        ${car.extras.map(extra => `<span class="selected-extras-tag">${extra}</span>`).join('')}
-                    </div>
-                </div>
-                ` : ''}
+            <div class="thumbnail-container" id="detailThumbnails">
+                ${car.images && car.images.length > 0
+                    ? car.images.map((img, idx) => `
+                        <img src="${img}"
+                             class="thumbnail ${idx === 0 ? 'active' : ''}"
+                             onclick="changeDetailImage(${idx})"
+                             alt="Thumbnail ${idx + 1}">
+                    `).join('')
+                    : ''}
             </div>
-            <div class="car-detail-info">
-                <h2>${car.n} ${car.m} (${car.year || ''})</h2>
-                <div class="car-price-large">${car.p ? car.p.toLocaleString() + ' CHF' : ''}</div>
-                
-                <div class="car-specs">
-                    <div class="spec-item">
-                        <div class="spec-label">Kilometer</div>
-                        <div class="spec-value">${car.km ? car.km.toLocaleString() + ' km' : '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Hubraum</div>
-                        <div class="spec-value">${car.engine ? car.engine + ' cm³' : '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Kraftstoff</div>
-                        <div class="spec-value">${car.fuel || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Getriebe</div>
-                        <div class="spec-value">${car.transmission || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Außenfarbe</div>
-                        <div class="spec-value">${car.color || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Innenfarbe</div>
-                        <div class="spec-value">${car.interiorColor || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Sitzplätze</div>
-                        <div class="spec-value">${car.seats || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Türen</div>
-                        <div class="spec-value">${car.doors || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">Kanton</div>
-                        <div class="spec-value">${car.city || '-'}</div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-label">MFK</div>
-                        <div class="spec-value">${car.inspectionDate ? new Date(car.inspectionDate).toLocaleDateString('de-CH') : '-'}</div>
-                    </div>
-                    
-                    <div class="car-status ${car.status === 'approved' ? 'status-approved' : car.status === 'pending' ? 'status-pending' : 'status-rejected'}" style="${currentUser && currentUser.username === 'admin' ? '' : 'display: none;'}">
-                        <i class="fas ${car.status === 'approved' ? 'fa-check-circle' : car.status === 'pending' ? 'fa-clock' : 'fa-times-circle'}"></i>
-                        ${car.status === 'approved' ? 'Aprovuar' : car.status === 'pending' ? 'Në Pritje' : 'Refuzuar'}
-                    </div>
 
-                    <div class="car-owner">
-                        <i class="fas fa-user"></i>
-                        Hinzugefügt von: ${car.ownerName}
-                        ${car.sellerType === 'handler' ? ' <span style="color: var(--warning);">(Händler)</span>' : ' <span style="color: var(--info);">(Privat)</span>'}
-                    </div>
-
-                    <div class="spec-item detail-mfk-old">
-                        <div class="spec-label">MFK</div>
-                        <div class="spec-value">${car.inspectionDate ? new Date(car.inspectionDate).toLocaleDateString('de-CH') : '-'}</div>
-                    </div>
-                </div>
-                
-                <div class="buttons-container" style="margin-top: 20px;">
-                    ${currentUser && car.ownerId !== currentUser.id ? `
-                    <button class="signup-btn" onclick="openContactModal(${index})" style="flex: 1;">
-                        <i class="fas fa-comment"></i> Verkäufer kontaktieren
-                    </button>
-                    ` : ''}
-                    
-                    <div class="share-buttons" style="margin-top: 20px;">
-                        <button class="share-btn share-facebook" onclick="shareOnFacebook('${car.id}')">
-                            <i class="fab fa-facebook-f"></i> Facebook
-                        </button>
-                        <button class="share-btn share-whatsapp" onclick="shareOnWhatsApp('${car.id}')">
-                            <i class="fab fa-whatsapp"></i> WhatsApp
-                        </button>
-                        <button class="share-btn share-copy" onclick="copyCarShareLink('${car.id}')">
-                            <i class="fas fa-copy"></i> Link kopieren
-                        </button>
-                    </div>
-                </div>
-                
-                ${(currentUser && (car.ownerId === currentUser.id || currentUser.username === "admin")) ? `
-                <div class="buttons-container" style="margin-top: 20px;">
-                    <button class="edit-btn" onclick="openEditModal(${index}); closeCarDetailModal()" style="flex: 1;">
-                        Bearbeiten
-                    </button>
-                    <button class="delete-btn" onclick="deleteCar(${index}); closeCarDetailModal()" style="flex: 1;">
-                        Löschen
-                    </button>
-                </div>
-                ` : ''}
-            </div>
         </div>
-    `;
+
+
+        <!-- INFORMACIONI I VETURËS -->
+        <div class="car-detail-info">
+
+            <h2>${car.n} ${car.m} (${car.year || ''})</h2>
+
+            <div class="car-price-large">
+                ${car.p ? car.p.toLocaleString() + ' CHF' : ''}
+            </div>
+
+
+            <!-- SPECIFIKAT -->
+            <div class="car-specs">
+
+                <div class="spec-item">
+                    <div class="spec-label">Kilometer</div>
+                    <div class="spec-value">
+                        ${car.km ? car.km.toLocaleString() + ' km' : '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Hubraum</div>
+                    <div class="spec-value">
+                        ${car.engine ? car.engine + ' cm³' : '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Kraftstoff</div>
+                    <div class="spec-value">
+                        ${car.fuel || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Getriebe</div>
+                    <div class="spec-value">
+                        ${car.transmission || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Außenfarbe</div>
+                    <div class="spec-value">
+                        ${car.color || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Innenfarbe</div>
+                    <div class="spec-value">
+                        ${car.interiorColor || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Sitzplätze</div>
+                    <div class="spec-value">
+                        ${car.seats || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Türen</div>
+                    <div class="spec-value">
+                        ${car.doors || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">Kanton</div>
+                    <div class="spec-value">
+                        ${car.city || '-'}
+                    </div>
+                </div>
+
+                <div class="spec-item">
+                    <div class="spec-label">MFK</div>
+                    <div class="spec-value">
+                        ${car.inspectionDate
+                            ? new Date(car.inspectionDate).toLocaleDateString('de-CH')
+                            : '-'}
+                    </div>
+                </div>
+
+
+                <!-- STATUS ADMIN -->
+                <div class="car-status ${
+                    car.status === 'approved'
+                        ? 'status-approved'
+                        : car.status === 'pending'
+                            ? 'status-pending'
+                            : 'status-rejected'
+                }"
+                style="${currentUser && currentUser.username === 'admin'
+                    ? ''
+                    : 'display: none;'}">
+
+                    <i class="fas ${
+                        car.status === 'approved'
+                            ? 'fa-check-circle'
+                            : car.status === 'pending'
+                                ? 'fa-clock'
+                                : 'fa-times-circle'
+                    }"></i>
+
+                    ${
+                        car.status === 'approved'
+                            ? 'Aprovuar'
+                            : car.status === 'pending'
+                                ? 'Në Pritje'
+                                : 'Refuzuar'
+                    }
+
+                </div>
+
+
+                <!-- OWNER -->
+                <div class="car-owner">
+                    <i class="fas fa-user"></i>
+
+                    Hinzugefügt von: ${car.ownerName}
+
+                    ${
+                        car.sellerType === 'handler'
+                            ? ' <span style="color: var(--warning);">(Händler)</span>'
+                            : ' <span style="color: var(--info);">(Privat)</span>'
+                    }
+                </div>
+
+            </div>
+
+
+            <!-- BESCHREIBUNG -->
+            ${
+                car.description
+                    ? `
+                    <div class="description-box">
+                        <h3>Beschreibung</h3>
+                        <p>${car.description}</p>
+                    </div>
+                    `
+                    : ''
+            }
+
+
+            <!-- KONTAKT -->
+            <div class="contact-info">
+
+                <h3>Kontaktinformationen</h3>
+
+                <div class="contact-item">
+                    <i class="fas fa-user"></i>
+                    <span>${car.ownerName}</span>
+                </div>
+
+                ${
+                    car.phone
+                        ? `
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>${car.phone}</span>
+                        </div>
+                        `
+                        : ''
+                }
+
+                ${
+                    car.email
+                        ? `
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>${car.email}</span>
+                        </div>
+                        `
+                        : ''
+                }
+
+            </div>
+
+
+            <!-- EXTRAS -->
+            ${
+                car.extras && car.extras.length > 0
+                    ? `
+                    <div class="extras-category" style="margin-top: 15px;">
+
+                        <h3>
+                            <i class="fas fa-check-circle"></i>
+                            Extras / Ausstattung
+                        </h3>
+
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+
+                            ${car.extras
+                                .map(extra =>
+                                    `<span class="selected-extras-tag">${extra}</span>`
+                                )
+                                .join('')}
+
+                        </div>
+
+                    </div>
+                    `
+                    : ''
+            }
+
+
+            <!-- BUTTONAT -->
+            <div class="buttons-container" style="margin-top: 20px;">
+
+                ${
+                    currentUser && car.ownerId !== currentUser.id
+                        ? `
+                        <button class="signup-btn"
+                                onclick="openContactModal(${index})"
+                                style="flex: 1;">
+
+                            <i class="fas fa-comment"></i>
+                            Verkäufer kontaktieren
+
+                        </button>
+                        `
+                        : ''
+                }
+
+
+                <div class="share-buttons" style="margin-top: 20px;">
+
+                    <button class="share-btn share-facebook"
+                            onclick="shareOnFacebook('${car.id}')">
+
+                        <i class="fab fa-facebook-f"></i>
+                        Facebook
+
+                    </button>
+
+                    <button class="share-btn share-whatsapp"
+                            onclick="shareOnWhatsApp('${car.id}')">
+
+                        <i class="fab fa-whatsapp"></i>
+                        WhatsApp
+
+                    </button>
+
+                    <button class="share-btn share-copy"
+                            onclick="copyCarShareLink('${car.id}')">
+
+                        <i class="fas fa-copy"></i>
+                        Link kopieren
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- EDIT / DELETE -->
+            ${
+                currentUser &&
+                (car.ownerId === currentUser.id ||
+                currentUser.username === "admin")
+                    ? `
+                    <div class="buttons-container" style="margin-top: 20px;">
+
+                        <button class="edit-btn"
+                                onclick="openEditModal(${index}); closeCarDetailModal()"
+                                style="flex: 1;">
+
+                            Bearbeiten
+
+                        </button>
+
+                        <button class="delete-btn"
+                                onclick="deleteCar(${index}); closeCarDetailModal()"
+                                style="flex: 1;">
+
+                            Löschen
+
+                        </button>
+
+                    </div>
+                    `
+                    : ''
+            }
+
+        </div>
+
+    </div>
+`;
     
     const carDetailModal = document.getElementById('carDetailModal');
     if (carDetailModal) {
@@ -5644,4 +5818,9 @@ function handleGoogleCredentialResponse(response) {
         showToast("Konto erfolgreich mit Google erstellt!");
     }
 }
-// ========== END OF JAVASCRIPT FILE ==========
+
+
+function toggleMobileMenu() {
+    const nav = document.querySelector('header nav');
+    nav.classList.toggle('mobile-menu-open');
+}

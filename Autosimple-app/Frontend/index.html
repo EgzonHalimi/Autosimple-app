@@ -34,53 +34,97 @@
                 </button>
             </div>
         </div>
-        <header>
-            <div class="logo-title" onclick="showPage('home')">
-                <img src="assets/logo2.jpg" class="header-bg">
-                <img src="assets/logo.png" class="logo">
-            </div>
-            <nav>
-                <a onclick="showPage('home')" id="navHome">Home</a>
-                <a onclick="showPage('info')" id="navInfo">Info</a>
-                <a onclick="openAddModal()" id="navAdd">Fahrzeug hinzufügen</a>
-                <a onclick="showPage('favorites')" id="favoritesLink">
-                    <i class="fas fa-heart"></i> <span id="navFavorites">Favorites</span>
-                    <span class="notification-badge" id="favoritesBadge" style="display: none;">0</span>
-                </a>
-                <a onclick="showPage('map')" id="mapLink">
-                    <i class="fas fa-map"></i> <span id="navMap">Map</span>
-                </a>
-                <a onclick="openMessagesModal()" id="messagesLink">
-                    <i class="fas fa-comments"></i> <span id="navMessages">Messages</span>
-                    <span class="notification-badge" id="messagesBadge" style="display: none;">0</span>
-                </a>
-                <select id="langSelect" onchange="setLang(this.value)">
-                    <option value="de" selected>DE</option>
-                    <option value="en">EN</option>
-                    <option value="fr">FR</option>
-                    <option value="it">IT</option>
-                    <option value="sq">SQ</option>
-                </select>
 
-                <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" type="button" aria-pressed="false">
-                    <i class="fas fa-moon"></i> <span>Dark</span>
-                </button>
-                
-                <button id="loginBtn" onclick="openAuthModal()"><span id="navLogin">Login / Sign Up</span></button>
-                
-                <div id="userInfoContainer" class="user-info hidden">
-                    <div class="user-avatar" id="userAvatar">U</div>
-                    <span id="userName"></span>
-                    <button id="profileBtn" class="profile-btn" onclick="showPage('profile')">
-                        <i class="fas fa-user"></i> <span id="navProfile">Profile</span>
-                    </button>
-                    <button id="adminUsersBtn" class="admin-btn" onclick="showPage('admin')" style="display: none;">
-                        <i class="fas fa-cog"></i> <span id="navAdmin">Admin</span>
-                    </button>
-                    <button id="logoutBtn" class="logout" onclick="logout()"><span id="navLogout">Logout</span></button>
-                </div>
-            </nav>
-        </header>
+<header>
+    <div class="logo-title" onclick="showPage('home')">
+        <img src="assets/logo2.jpg" class="header-bg">
+        <img src="assets/logo.png" class="logo">
+    </div>
+
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" type="button">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <nav id="mainNav">
+        <a onclick="showPage('home')" id="navHome">Home</a>
+
+        <a onclick="showPage('info')" id="navInfo">Info</a>
+
+        <a onclick="openAddModal()" id="navAdd">
+            Fahrzeug hinzufügen
+        </a>
+
+        <a onclick="showPage('favorites')" id="favoritesLink">
+            <i class="fas fa-heart"></i>
+            <span id="navFavorites">Favorites</span>
+            <span class="notification-badge" id="favoritesBadge" style="display: none;">0</span>
+        </a>
+
+        <a onclick="showPage('map')" id="mapLink">
+            <i class="fas fa-map"></i>
+            <span id="navMap">Map</span>
+        </a>
+
+        <a onclick="openMessagesModal()" id="messagesLink">
+            <i class="fas fa-comments"></i>
+            <span id="navMessages">Messages</span>
+            <span class="notification-badge" id="messagesBadge" style="display: none;">0</span>
+        </a>
+
+        <select id="langSelect" onchange="setLang(this.value)">
+            <option value="de" selected>DE</option>
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="it">IT</option>
+            <option value="sq">SQ</option>
+        </select>
+
+        <button id="themeToggle"
+                class="theme-toggle"
+                onclick="toggleTheme()"
+                type="button"
+                aria-pressed="false">
+            <i class="fas fa-moon"></i>
+            <span>Dark</span>
+        </button>
+
+        <button id="loginBtn" onclick="openAuthModal()" type="button">
+            <span id="navLogin">Login / Sign Up</span>
+        </button>
+
+        <div id="userInfoContainer" class="user-info hidden">
+            <div class="user-avatar" id="userAvatar">U</div>
+
+            <span id="userName"></span>
+
+            <button id="profileBtn"
+                    class="profile-btn"
+                    onclick="showPage('profile')"
+                    type="button">
+                <i class="fas fa-user"></i>
+                <span id="navProfile">Profile</span>
+            </button>
+
+            <button id="adminUsersBtn"
+                    class="admin-btn"
+                    onclick="showPage('admin')"
+                    style="display: none;"
+                    type="button">
+                <i class="fas fa-cog"></i>
+                <span id="navAdmin">Admin</span>
+            </button>
+
+            <button id="logoutBtn"
+                    class="logout"
+                    onclick="logout()"
+                    type="button">
+                <span id="navLogout">Logout</span>
+            </button>
+        </div>
+    </nav>
+</header>
+
+
 
         <div class="container">
             <div class="sorting-container" id="sortingContainer">
@@ -133,7 +177,9 @@
                         <i class="fas fa-times"></i>
                         <span id="tClearFilters">Filter löschen</span>
                     </button>
-                </div>
+                
+            </div>
+                
 
                 <div class="extra-filters-container" id="extraFiltersContainer">
                     <button class="extra-filters-toggle" onclick="toggleExtraFilters()">
