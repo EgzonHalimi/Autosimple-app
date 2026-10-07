@@ -64,7 +64,7 @@ async function loadCarsFromSupabase() {
                 createdAt: car.created_at
             }));
 
-            localStorage.setItem("cars", JSON.stringify(cars));
+            
 
             render();
         }
@@ -2567,11 +2567,6 @@ async function addCar() {
             vehicleType: carForSupabase.vehicleType,
             createdAt: carForSupabase.created_at
         });
-
-        localStorage.setItem(
-            "cars",
-            JSON.stringify(cars)
-        );
 
         render();
         closeAddModal();
