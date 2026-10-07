@@ -1,3 +1,17 @@
+
+const SUPABASE_URL = "https://vvknaytoavlwpkpysyen.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bG--mnPX4AfaAE8U49kRoA_jhnBdv_c";
+
+window.autoSimpleSupabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+console.log("Supabase connected:", window.autoSimpleSupabase);
+
+
+
+
 // Initialize all variables with existing data
 let currentLang = localStorage.getItem('autoSimpleLang') || 'de';
 let currentTheme = localStorage.getItem('autoSimpleTheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -27,27 +41,77 @@ function toggleTheme() {
 }
 
 applyTheme(currentTheme);
+
 let currentUser = JSON.parse(sessionStorage.getItem("currentUser")) || null;
+
 let cars = JSON.parse(localStorage.getItem("cars")) || [];
+
+async function loadCarsFromSupabase() {
+    try {
+        const { data, error } = await window.autoSimpleSupabase
+            .from("cars")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Supabase LOAD Error:", error);
+            return;
+        }
+
+        if (data) {
+            cars = data.map(car => ({
+                ...car,
+                createdAt: car.created_at
+            }));
+
+            localStorage.setItem("cars", JSON.stringify(cars));
+
+            render();
+        }
+
+    } catch (error) {
+        console.error("Fehler beim Laden der Fahrzeuge:", error);
+    }
+}
+
 let users = JSON.parse(localStorage.getItem("users")) || [];
+
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
 let messages = JSON.parse(localStorage.getItem("messages")) || [];
+
 let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
+
 let auditLog = JSON.parse(localStorage.getItem("auditLog")) || [];
+
 let currentEditIndex = -1;
+
 let selectedFiles = [];
+
 let editSelectedFiles = [];
+
 let currentCarDetailIndex = -1;
+
 let currentDetailCarousel = null;
+
 let currentConversation = null;
+
 let currentFullscreenImageIndex = 0;
+
 let compareCars = JSON.parse(sessionStorage.getItem("compareCars")) || [];
+
 let map = null;
+
 let markers = [];
+
 let deferredPrompt = null;
+
 let shareCarId = null;
+
 let areFiltersVisible = false;
+
 let currentContactCarIndex = -1;
+
 let carsToShow = cars; // Deklarimi i variablit
 
 // ========== GOOGLE CLIENT ID ==========
@@ -2349,12 +2413,12 @@ function closeAddModal() {
     resetAddForm();
 }
 
-function addCar() {
+async function addCar() {
     if (!currentUser) {
         showToast("Bitte melden Sie sich an!", true);
         return;
     }
-    
+
     const name = document.getElementById('name');
     const model = document.getElementById('model');
     const vehicleType = document.getElementById('vehicleType');
@@ -2374,16 +2438,17 @@ function addCar() {
     const phone = document.getElementById('phone');
     const email = document.getElementById('email');
     const description = document.getElementById('description');
-    
-    if (!name || !model || !vehicleType || !year || !km || !fuel || !transmission || !price || !city) {
+
+    if (!name || !model || !vehicleType || !year || !km ||
+        !fuel || !transmission || !price || !city) {
         showToast("Bitte füllen Sie alle erforderlichen Felder aus!", true);
         return;
     }
-    
+
     const nameValue = name.value;
     const modelValue = model.value;
     const vehicleTypeValue = vehicleType.value;
-    const yearValue = year.value;
+    const yearValue = parseInt(year.value);
     const kmValue = parseInt(km.value);
     const engineValue = engine.value ? parseInt(engine.value) : null;
     const colorValue = color.value;
@@ -2393,86 +2458,136 @@ function addCar() {
     const fuelValue = fuel.value;
     const transmissionValue = transmission.value;
     const priceValue = parseFloat(price.value);
-    const sellerTypeValue = sellerType?.value || 'private';
     const cityValue = city.value;
     const inspectionDateValue = inspectionDate.value;
     const phoneValue = phone.value.trim();
     const emailValue = email.value.trim();
     const descriptionValue = description.value.trim();
-    
-    if (!nameValue || !modelValue || !vehicleTypeValue || !yearValue || !kmValue || !fuelValue || !transmissionValue || !priceValue || !cityValue) {
+
+    if (!nameValue || !modelValue || !vehicleTypeValue ||
+        !yearValue || !kmValue || !fuelValue ||
+        !transmissionValue || !priceValue || !cityValue) {
         showToast("Bitte füllen Sie alle erforderlichen Felder aus!", true);
         return;
     }
-    
-    const newCar = {
-        id: generateId(),
-        ownerId: currentUser.id,
-        ownerName: currentUser.username,
-        n: nameValue,
-        m: modelValue,
-        vehicleType: vehicleTypeValue,
-        year: parseInt(yearValue),
-        km: kmValue,
-        engine: engineValue,
-        color: colorValue,
-        interiorColor: interiorColorValue,
-        seats: seatsValue,
-        doors: doorsValue,
-        fuel: fuelValue,
-        transmission: transmissionValue,
-        p: priceValue,
-        city: cityValue,
-        inspectionDate: inspectionDateValue,
-        phone: phoneValue,
-        email: emailValue,
-        description: descriptionValue,
-        createdAt: new Date().toISOString(),
-        images: [],
-        status: "pending",
-        approvedAt: null,
-        rejectedAt: null,
-        adminNotes: "",
-        sellerType: sellerTypeValue,
-        extras: addSelectedExtras,
-    };
-    
-    if (selectedFiles.length > 0) {
-        const readers = [];
-        let loadedCount = 0;
-        
-        selectedFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            readers.push(reader);
-            
-            reader.onload = function(e) {
-                newCar.images.push(e.target.result);
-                loadedCount++;
-                
-                if (loadedCount === selectedFiles.length) {
-                    cars.push(newCar);
-                    localStorage.setItem("cars", JSON.stringify(cars));
-                    render();
-                    closeAddModal();
-                    resetAddForm();
-                    filterCars();
-                    showToast("Fahrzeug erfolgreich hinzugefügt!");
-                    updatePendingCarsCount();
-                }
-            };
-            
-            reader.readAsDataURL(file);
+
+    try {
+        showToast("Fahrzeug wird gespeichert...");
+
+        // Bilder vorbereiten
+        let images = [];
+
+        if (selectedFiles.length > 0) {
+            images = await Promise.all(
+                selectedFiles.map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+
+                        reader.onload = e => resolve(e.target.result);
+                        reader.onerror = reject;
+
+                        reader.readAsDataURL(file);
+                    });
+                })
+            );
+        } else {
+            images = [
+                'https://via.placeholder.com/400x200?text=No+Image'
+            ];
+        }
+
+        // Daten für Supabase
+        const carForSupabase = {
+            id: generateId(),
+            ownerId: currentUser.id,
+            ownerName: currentUser.username,
+
+            n: nameValue,
+            m: modelValue,
+            vehicleType: vehicleTypeValue,
+
+            year: yearValue,
+            km: kmValue,
+            engine: engineValue,
+
+            color: colorValue,
+            interiorColor: interiorColorValue,
+
+            seats: seatsValue,
+            doors: doorsValue,
+
+            fuel: fuelValue,
+            transmission: transmissionValue,
+
+            p: priceValue,
+            city: cityValue,
+            inspectionDate: inspectionDateValue,
+
+            phone: phoneValue,
+            email: emailValue,
+            description: descriptionValue,
+
+            created_at: new Date().toISOString(),
+
+            images: images,
+
+            status: "pending",
+            approvedAt: null,
+            adminNotes: ""
+        };
+
+        // Supabase speichern
+        const { data, error } = await window.autoSimpleSupabase
+            .from("cars")
+            .insert([carForSupabase])
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Supabase INSERT Error:", error);
+
+            showToast(
+                "Fehler beim Speichern: " + error.message,
+                true
+            );
+
+            return;
+        }
+
+        console.log(
+            "Fahrzeug erfolgreich in Supabase gespeichert:",
+            data
+        );
+
+        // Lokal ebenfalls speichern
+        cars.push({
+            ...carForSupabase,
+
+            ownerId: carForSupabase.ownerId,
+            vehicleType: carForSupabase.vehicleType,
+            createdAt: carForSupabase.created_at
         });
-    } else {
-        newCar.images = ['https://via.placeholder.com/400x200?text=No+Image'];
-        cars.push(newCar);
-        localStorage.setItem("cars", JSON.stringify(cars));
+
+        localStorage.setItem(
+            "cars",
+            JSON.stringify(cars)
+        );
+
         render();
         closeAddModal();
         resetAddForm();
         filterCars();
-        showToast("Fahrzeug erfolgreich hinzugefügt!");
         updatePendingCarsCount();
+
+        showToast("Fahrzeug erfolgreich hinzugefügt!");
+
+    } catch (error) {
+        console.error("Fehler:", error);
+
+        showToast(
+            "Fehler beim Speichern des Fahrzeugs!",
+            true
+        );
     }
 }
 
@@ -5824,3 +5939,5 @@ function toggleMobileMenu() {
     const nav = document.querySelector('header nav');
     nav.classList.toggle('mobile-menu-open');
 }
+
+loadCarsFromSupabase();
