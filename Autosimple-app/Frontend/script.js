@@ -2387,7 +2387,7 @@ function openAddModal() {
         openAuthModal();
         return;
     }
-     addSelectedExtras = [];
+    addSelectedExtras = [];
     updateAddExtrasPreview();
     
     selectedFiles = [];
@@ -2400,7 +2400,7 @@ function openAddModal() {
     if (addModal) {
         addModal.style.display = 'flex';
     }
-      addSelectedExtras = [];
+    addSelectedExtras = [];
     updateAddExtrasPreview();
     
 }
@@ -3963,7 +3963,6 @@ function updateMap() {
     
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
-    
     const mapBrandFilter = document.getElementById('mapBrandFilter');
     const mapDistanceFilter = document.getElementById('mapDistanceFilter');
     
@@ -5171,7 +5170,7 @@ function renderPendingCars() {
             <div class="pending-car-card">
                 <div>
                     <img src="${car.images && car.images.length > 0 ? car.images[0] : 'https://via.placeholder.com/150x100?text=No+Image'}" 
-                         alt="${car.n} ${car.m}" class="pending-car-image">
+                        alt="${car.n} ${car.m}" class="pending-car-image">
                     <div class="pending-status pending">Në Pritje</div>
                 </div>
                 
@@ -5219,7 +5218,7 @@ function viewCarDetailsForApproval(index) {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <img src="${car.images && car.images.length > 0 ? car.images[0] : 'https://via.placeholder.com/400x300?text=No+Image'}" 
-                         style="width: 100%; border-radius: 8px;" alt="${car.n} ${car.m}">
+                        style="width: 100%; border-radius: 8px;" alt="${car.n} ${car.m}">
                     
                     <div style="margin-top: 20px;">
                         <h3>Informacion Bazë</h3>
@@ -5935,4 +5934,26 @@ function toggleMobileMenu() {
     nav.classList.toggle('mobile-menu-open');
 }
 
+
 loadCarsFromSupabase();
+function closeMobileMenu() {
+    const nav = document.querySelector('header nav');
+
+    if (nav) {
+        nav.classList.remove('mobile-menu-open');
+    }
+}
+
+document.querySelectorAll('#mainNav a, #mainNav button').forEach(item => {
+    item.addEventListener('click', closeMobileMenu);
+});
+
+
+window.addEventListener("pageshow", function () {
+    const searchBox = document.getElementById("searchBox");
+
+    if (searchBox) {
+        searchBox.value = "";
+    }
+});
+

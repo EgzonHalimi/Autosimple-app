@@ -146,9 +146,31 @@
                 <h2 id="tCars">Fahrzeuge zum Verkauf</h2>
                 
                 <div class="search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="search-box" id="searchBox" placeholder="Suche nach Marke, Modell, Stadt, Farbe..." oninput="filterCars()">
-                </div>
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" class="search-box" id="searchBox"
+        placeholder="Suche nach Marke, Modell, Stadt, Farbe..."
+        oninput="filterCars()">
+</div>
+
+
+
+<div class="mobile-sort-container">
+    <div class="sort-wrapper">
+        <i class="fas fa-sort-amount-down sort-icon"></i>
+        <select id="mobileSortFilter" onchange="
+            document.getElementById('sortFilter').value = this.value;
+            filterCars();
+        ">
+            <option value="">Sortieren</option>
+            <option value="priceAsc">Preis: niedrig → hoch</option>
+            <option value="priceDesc">Preis: hoch → niedrig</option>
+            <option value="kmAsc">KM: niedrig → hoch</option>
+            <option value="kmDesc">KM: hoch → niedrig</option>
+            <option value="yearDesc">Neuste zuerst</option>
+            <option value="yearAsc">Älteste zuerst</option>
+        </select>
+    </div>
+</div>
                 
                 <div class="filter-box" id="filterBox">
                     <select id="filterBrand" onchange="updateModels(); filterCars()">
